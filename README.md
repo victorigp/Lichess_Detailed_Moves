@@ -5,3 +5,5 @@ Modificación del script de TamperMonkey de Lichess - Detailed Moves (Games & St
 
 ## Uso
 Importar el script Lichess - Detailed Moves (Games & Studies).user.js en TamperMonkey
+
+![image](https://github.com/user-attachments/assets/76b14202-0950-4e8f-87eb-b04c74787060)
