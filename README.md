@@ -6,5 +6,5 @@ Al hacer clic sobre los textos de las jugadas, nos muestra su posición en el ta
 
 Modificación del script [Lichess - Detailed Moves](https://github.com/sealldeveloper/lichess-detailed-moves) by Seall.DEV & Thomas Sihapnya
 
-## Uso
-Importar el script Lichess - Detailed Moves (Games & Studies).user.js en TamperMonkey
+## Instalación
+Importar el script Lichess - Detailed Moves (Games & Studies).user.js en la extensión TamperMonkey (u otro userscript manager) de tu navegador.
