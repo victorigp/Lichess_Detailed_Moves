@@ -202,6 +202,7 @@
                 moves.push(currentSanText); // Add clean text to moves array
                 let currentMoveIndex = moves.length - 1;
                 let currentColor = checkColor(currentMoveIndex);
+                domMove.dataset.moveColor = currentColor; // Añade el color como atributo data-*
                 let isBookMove = !!sanNode.querySelector('i.fa-book'); // Check if book icon exists from potential previous run or Lichess
 
                 // Handle opening moves (Remains the same, uses span+icon)
@@ -446,7 +447,7 @@
     // --- Function to handle sequential navigation clicks in summary (v3 - Fix current index & color filtering) ---
         // --- Function to handle sequential navigation clicks in summary (v4 - Add Book Move Support) ---
     function setupSummaryClickNavigation() {
-        console.log("Setting up summary click navigation listeners (v4 - Book Support)...");
+        console.log("Setting up summary click navigation listeners..."); // <-- Log útil mantenido
 
         const mainContainer = document.querySelector('main.analyse, main.study') || document.body;
 
@@ -454,101 +455,120 @@
             const clickedSummaryItem = event.target.closest('.advice-summary__error.symbol');
             if (!clickedSummaryItem) return;
 
-            // --- Determine Move Class ---
+            // Determine Move Class
             let moveClass = '';
             if (clickedSummaryItem.classList.contains('brilliant')) moveClass = 'brilliant';
             else if (clickedSummaryItem.classList.contains('good')) moveClass = 'good';
             else if (clickedSummaryItem.classList.contains('interesting')) moveClass = 'interesting';
-            else if (clickedSummaryItem.classList.contains('book')) moveClass = 'book'; // <-- Add book case
+            else if (clickedSummaryItem.classList.contains('book')) moveClass = 'book';
 
-            // If not a class we handle, let Lichess do its thing
-            if (!moveClass) return;
+            if (!moveClass) return; // Not a class we handle
 
-            // --- Get Target Color ---
+            // Get Target Color
              const targetColor = clickedSummaryItem.dataset.color;
              if (!targetColor) {
-                 console.warn("Could not determine target color from clicked summary item:", clickedSummaryItem);
+                 // console.warn("Could not determine target color from clicked summary item:", clickedSummaryItem); // Comentado/Eliminado
                  return;
              }
 
-            // --- Stop Lichess's default handler ---
+            // Stop Lichess's default handler
             event.stopPropagation();
 
-            // --- Find Containers and All Moves ---
+            // Find Containers and All Moves
             const moveListContainer = document.querySelector('.analyse__moves .tview2-column, .gamebook .tview2-column, div.tview2.tview2-column');
-             if (!moveListContainer) { console.error("Move list container not found."); return; }
+             if (!moveListContainer) { console.error("Move list container not found."); return; } // <-- Error mantenido
              const allMoveNodes = moveListContainer.querySelectorAll('move:not(.empty)');
              const allMoveElements = Array.from(allMoveNodes);
+             // console.log(`Found ${allMoveElements.length} total moves.`); // Comentado/Eliminado
 
-            // --- Find Current Move ---
+            // Find Current Move
             const currentMoveNode = moveListContainer.querySelector('move.active');
             let currentIndex = -1;
             if (currentMoveNode) {
                  currentIndex = allMoveElements.indexOf(currentMoveNode);
-                 console.log(`Current move index: ${currentIndex}`, currentMoveNode);
+                 // console.log(`Current move index: ${currentIndex}`, currentMoveNode); // Comentado/Eliminado
             } else {
-                 console.log("Current move index: -1 (No active move found)");
+                 // console.log("Current move index: -1 (No active move found)"); // Comentado/Eliminado
             }
 
-            // --- Find Potential Relevant Moves using the CORRECT SELECTOR ---
+            // Find Potential Relevant Moves using the CORRECT SELECTOR
             let selector = '';
             if (moveClass === 'book') {
-                 // Use a simpler :has() looking only for the icon inside the move
                  selector = 'move[data-is-book="true"]:not(.empty)';
             } else {
-                 // Use the standard class selector for brilliant, good, interesting
                  selector = `move.${moveClass}:not(.empty)`;
             }
+            // console.log("Using selector:", selector); // Comentado/Eliminado
             const allPotentialRelevantNodes = moveListContainer.querySelectorAll(selector);
+            // console.log(`Found ${allPotentialRelevantNodes.length} potential moves with selector:`, allPotentialRelevantNodes); // Comentado/Eliminado
 
-            // --- Filter by Color ---
+            // --- Filter by Color (Using Stored Data Attribute) ---
             const relevantMoveNodes = [];
-            console.log(`Found ${allPotentialRelevantNodes.length} potential moves using selector. Filtering for color "${targetColor}"...`);
+            // console.log(`Filtering for color "${targetColor}"...`); // Comentado/Eliminado
             for (const node of allPotentialRelevantNodes) {
                 const nodeIndex = allMoveElements.indexOf(node);
-                 if (nodeIndex === -1) continue;
-                const isWhiteMove = nodeIndex % 2 === 0;
-                 if ((targetColor === 'white' && isWhiteMove) || (targetColor === 'black' && !isWhiteMove)) {
-                     relevantMoveNodes.push(node);
-                 }
-            }
+                if (nodeIndex === -1) continue;
 
-            // --- Navigation Logic ---
+                // Read the stored color directly from the element
+                const nodeColor = node.dataset.moveColor;
+
+                // --- Logs eliminados de la comprobación ---
+
+                if (nodeColor === targetColor) {
+                    relevantMoveNodes.push(node);
+                }
+            }
+             // console.log(`Found ${relevantMoveNodes.length} relevant moves after color filtering:`, relevantMoveNodes); // Comentado/Eliminado
+            // --- End Filter ---
+
+
+            // Navigation Logic
             if (relevantMoveNodes.length === 0) {
+                 // console.log("No relevant moves found after filtering. Aborting navigation."); // Comentado/Eliminado
                  return;
              }
 
             let nextTargetNode = null;
              let foundNext = false;
+             // console.log("Starting search for next move after index:", currentIndex); // Comentado/Eliminado
             for (const node of relevantMoveNodes) {
                 const nodeIndex = allMoveElements.indexOf(node);
-                 if (nodeIndex > currentIndex) {
+                if (nodeIndex > currentIndex) {
                     nextTargetNode = node;
                      foundNext = true;
                     break;
                 }
             }
              if (!foundNext) {
-                 nextTargetNode = relevantMoveNodes[0];
+                 // console.log("Did not find a move *after* current index. Wrapping around."); // Comentado/Eliminado
+                 nextTargetNode = relevantMoveNodes[0]; // Wrap around
              }
 
-            // --- Dispatch Event (should work the same) ---
+            // console.log("Final target node:", nextTargetNode); // Comentado/Eliminado
+
+            // Dispatch Event
             if (nextTargetNode) {
                 try {
+                    // console.log("Attempting to dispatch mousedown event..."); // Comentado/Eliminado
                     const mouseDownEvent = new MouseEvent('mousedown', {
                         bubbles: true, cancelable: true, view: unsafeWindow
                     });
-                    const dispatchResult = nextTargetNode.dispatchEvent(mouseDownEvent);
+                    nextTargetNode.dispatchEvent(mouseDownEvent);
+                    // console.log("Mousedown event dispatch result:", dispatchResult); // Comentado/Eliminado
                 } catch (e) {
-                    console.error("Error dispatching mousedown event:", e);
-                    nextTargetNode.click();
+                    console.error("Error dispatching mousedown event:", e); // <-- Error mantenido
+                    try { // Fallback to click
+                         nextTargetNode.click();
+                    } catch (e2) {
+                         console.error("Fallback .click() also failed:", e2); // <-- Error mantenido
+                    }
                 }
             } else {
-                 console.warn("Could not determine target move node after filtering.");
+                 console.warn("Could not determine target move node after filtering and logic."); // <-- Warning mantenido
             }
         }); // End event listener
 
-        console.log("Summary click navigation listeners are active (v4).");
+        console.log("Summary click navigation listeners are active."); // <-- Log útil mantenido
     } // End setupSummaryClickNavigation function
     // --- Init & Event Handling ---
     // No automatic run on load needed; observer handles trigger
