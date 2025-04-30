@@ -1,9 +1,10 @@
 # Lichess Detailed Moves 2.0
-Muestra jugadas brillantes, excelentes, buenas y de libro en análisis y estudio de Lichess. Al hacer clic sobre ellas, nos las muestra en el tablero y muestra los iconos correspondientes a las jugadas.
+Muestra jugadas brillantes, excelentes, buenas y de libro en los apatados de análisis y de estudio de Lichess sin necesidad de recargar la página. 
+Al hacer clic sobre los textos de las jugadas, nos muestra suposición en el tablero con sus iconos correspondientes.
 
-Modificación del script de TamperMonkey de Lichess - Detailed Moves (Games & Studies) by Seall.DEV & Thomas Sihapnya para que no sea necesario recargar la página y que además de funcionar en el apartado de análisis de Lichess, también lo haga en el apartado de Estudio.
+Modificación del script de TamperMonkey de Lichess - Detailed Moves (Games & Studies) by Seall.DEV & Thomas Sihapnya
 
 ## Uso
 Importar el script Lichess - Detailed Moves (Games & Studies).user.js en TamperMonkey
 
-![image](https://github.com/user-attachments/assets/a8ea1836-9002-45ce-bbc9-6cf2bb326577)
+![image](https://github.com/user-attachments/assets/df8b868e-04d3-4c45-b251-990304d52f56)
