@@ -32,6 +32,28 @@
     const SHOW_SAN_NOT_FOUND_WARNINGS = false;
     const LOADER_ID = 'acpl-chart-container-loader'; // <-- Use ID now
 
+    const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
+    const SVG_INDICATOR_ATTRIBUTE = 'data-userscript-indicator'; // Para identificar nuestros indicadores
+
+    const SVG_INDICATOR_DATA = {
+        brilliant: { // !!
+            bgColor: '#168226', // Hex directo del ejemplo d6
+            pathD: 'M71.967 62.349h-9.75l-2.049-39.083h13.847zM60.004 76.032q0-3.77 2.049-5.244 2.048-1.557 4.998-1.557 2.867 0 4.916 1.557 2.048 1.475 2.048 5.244 0 3.605-2.048 5.244-2.049 1.556-4.916 1.556-2.95 0-4.998-1.556-2.049-1.64-2.049-5.244zM37.967 62.349h-9.75l-2.049-39.083h13.847zM26.004 76.032q0-3.77 2.049-5.244 2.048-1.557 4.998-1.557 2.867 0 4.916 1.557 2.048 1.475 2.048 5.244 0 3.605-2.048 5.244-2.049 1.556-4.916 1.556-2.95 0-4.998-1.556-2.049-1.64-2.049-5.244z'
+        },
+        good: { // ! (Excelente)
+            bgColor: '#22ac38', // Hex directo del ejemplo c5
+            pathD: 'M54.967 62.349h-9.75l-2.049-39.083h13.847zM43.004 76.032q0-3.77 2.049-5.244 2.048-1.557 4.998-1.557 2.867 0 4.916 1.557 2.048 1.475 2.048 5.244 0 3.605-2.048 5.244-2.049 1.556-4.916 1.556-2.95 0-4.998-1.556-2.049-1.64-2.049-5.244z'
+        },
+        interesting: { // ?! (Buena)
+            bgColor: '#ea45d8', // Hex directo del ejemplo e6
+            pathD: 'M60.823 58.9q0-4.098 1.72-6.883 1.721-2.786 5.9-5.818 3.687-2.622 5.243-4.506 1.64-1.966 1.64-4.588t-1.967-3.933q-1.885-1.393-5.326-1.393t-6.8 1.065q-3.36 1.065-6.883 2.868l-4.343-8.767q4.015-2.212 8.685-3.605 4.67-1.393 10.242-1.393 8.521 0 13.192 4.097 4.752 4.096 4.752 10.405 0 3.36-1.065 5.818-1.066 2.458-3.196 4.588-2.13 2.048-5.326 4.424-2.376 1.72-3.687 2.95-1.31 1.229-1.802 2.376-.41 1.147-.41 2.868v2.376h-10.57zm-1.311 16.632q0-3.77 2.048-5.244 2.049-1.557 4.998-1.557 2.868 0 4.916 1.557 2.049 1.475 2.049 5.244 0 3.605-2.049 5.244-2.048 1.556-4.916 1.556-2.95 0-4.998-1.556-2.048-1.64-2.048-5.244zM36.967 61.849h-9.75l-2.049-39.083h13.847zM25.004 75.532q0-3.77 2.049-5.244 2.048-1.557 4.998-1.557 2.867 0 4.916 1.557 2.048 1.475 2.048 5.244 0 3.605-2.048 5.244-2.049 1.556-4.916 1.556-2.95 0-4.998-1.556-2.049-1.64-2.049-5.244z'
+        },
+        book: {
+            bgColor: '#a88865', // Mantener este (o usar var(--c-book, #a88865))
+            pathD: null // Usaremos foreignObject
+        }
+    };
+
     // --- Globals ---
     let currentEcoCodes = null;
     let observer = null;
@@ -203,6 +225,7 @@
                 let currentMoveIndex = moves.length - 1;
                 let currentColor = checkColor(currentMoveIndex);
                 domMove.dataset.moveColor = currentColor; // Añade el color como atributo data-*
+                domMove.dataset.san = currentSanText; // Añade la notación SAN como atributo data-*
                 let isBookMove = !!sanNode.querySelector('i.fa-book'); // Check if book icon exists from potential previous run or Lichess
 
                 // Handle opening moves (Remains the same, uses span+icon)
@@ -340,19 +363,21 @@
     }
 
     function showDataInTable(summaryContainer) {
-        console.log('Updating summary table (Restoring colors, keeping simplified HTML)...'); // Log actualizado
-        if (!summaryContainer || !isProcessing) { console.warn(`Invalid summary or processing flag false.`); finishProcessing(false); return; }
+        console.log('Updating summary table...'); // Log mantenido
+        if (!summaryContainer || !isProcessing) { /* ... */ return; }
         const summarySides = summaryContainer.querySelectorAll('.advice-summary__side');
-        if (summarySides.length < 2) { console.warn(`Less than 2 summary sides.`); finishProcessing(false); return; }
+        if (summarySides.length < 2) { /* ... */ return; }
         const whiteTable = Array.from(summarySides).find(side => side.querySelector('.color-icon.white'));
         const blackTable = Array.from(summarySides).find(side => side.querySelector('.color-icon.black'));
-        if (!whiteTable || !blackTable) { console.warn('Could not ID white/black summary sides.'); finishProcessing(false); return; }
+        if (!whiteTable || !blackTable) { /* ... */ return; }
 
-        // --- Modified dataPoint function (restoring color application) ---
-        function dataPoint(colour, symbol, data, text, table, coloured, _className) { // Volvemos a usar 'coloured', ignoramos '_className'
+        // --- Función dataPoint INTERNA ---
+        // (La función dataPoint en sí misma no necesita cambios,
+        // ya que acepta el string de color y lo aplica)
+        function dataPoint(colour, symbol, data, text, table, coloured /*, _className - No usado*/) {
             let beforeNode = null;
             const childNodes = Array.from(table.childNodes);
-            const insertBeforeTerms = [ /* ... (mismos términos que antes) ... */
+            const insertBeforeTerms = [
                 'imprecisiones', 'Imprecisiones', 'imprecisión', 'Imprecisión', 'inaccuracy', 'Inaccuracies', 'inaccuracy', 'Inaccuracy',
                 'Error', 'Errores', 'Mistake', 'mistake', 'Mistakes', 'mistakes',
                 'Errores graves', 'Blunder', 'blunder', 'Blunders', 'blunders',
@@ -368,9 +393,7 @@
             }
 
             const div = document.createElement('div');
-
-            // --- Add classes mimicking Lichess structure ---
-            div.classList.add('advice-summary__error', 'symbol');
+            div.classList.add('advice-summary__error', 'symbol', 'custom-move-stat'); // Añadimos clase para posible limpieza futura
 
             let simpleClassNameForClick = '';
             if (symbol === '!!') simpleClassNameForClick = 'brilliant';
@@ -379,68 +402,183 @@
             else if (symbol === 'Book') simpleClassNameForClick = 'book';
 
             if (simpleClassNameForClick) {
-                div.classList.add(simpleClassNameForClick); // Add the class ('brilliant', 'good', 'interesting', 'book')
-
-                // --- Conditionally set cursor style ---
-                if (data > 0) {
-                    // Apply pointer if there are moves
-                    div.style.cursor = 'pointer';
-                } else {
-                    // Explicitly set default cursor if there are no moves
-                    // This overrides any potential CSS rule applying pointer based on the class
-                    div.style.cursor = 'text';
-                }
-                // --- End cursor logic ---
+                div.classList.add(simpleClassNameForClick);
+                div.style.cursor = (data > 0) ? 'pointer' : 'text';
             }
-            // --- End class adjustments ---
 
-            // --- Restore direct color styling for the summary text ---
-            // Apply color if data exists and a color code was provided
-            // This ensures the text in the summary has the intended color.
-             if (data > 0 && coloured) {
-                 div.style.color = coloured;
-             }
-            // --- End color restoration ---
+            // --- Aplicar el Color al Texto del Resumen ---
+            // Usamos setProperty que es más robusto, especialmente si en el futuro
+            // decidiéramos volver a usar variables CSS aquí.
+            if (data > 0 && coloured) {
+                 div.style.setProperty('color', coloured);
+            }
+            // --- Fin Aplicar Color ---
 
-
-            // Add attributes
             div.setAttribute('data-color', colour);
             div.setAttribute('data-symbol', symbol);
-
-            // Add content
             const strong = document.createElement('strong'); strong.textContent = data;
             div.appendChild(strong);
             div.appendChild(document.createTextNode(text));
 
-            // Insert into DOM
-            if (beforeNode) {
-                table.insertBefore(div, beforeNode);
-            } else {
-                table.appendChild(div);
-            }
+            if (beforeNode) { table.insertBefore(div, beforeNode); }
+            else { table.appendChild(div); }
         }
-        // --- End of modified dataPoint function ---
+        // --- Fin función dataPoint ---
 
 
-        // Calls - Pass the color parameter again
-        dataPoint('white','!!',currentMovesData.white.brillant,'Brillantes',whiteTable,'#1baca6', 'stat-brilliant-w');
-        dataPoint('white','!',currentMovesData.white.excellent,'Excelentes',whiteTable,'#96bc4b', 'stat-excellent-w');
-        dataPoint('white','!?',currentMovesData.white.good,'Buenas',whiteTable,'#b2f196', 'stat-good-w');
-        dataPoint('white','Book',currentMovesData.white.book,'De libro',whiteTable,'#a88865', 'stat-book-w');
+        // --- LLAMADAS MODIFICADAS ---
+        // Usa los códigos hexadecimales EXACTOS de SVG_INDICATOR_DATA
+        dataPoint('white','!!',currentMovesData.white.brillant,'Brillantes',whiteTable, SVG_INDICATOR_DATA.brilliant.bgColor); // Brillante (!!)
+        dataPoint('white','!',currentMovesData.white.excellent,'Excelentes',whiteTable, SVG_INDICATOR_DATA.good.bgColor); // Excelente (!)
+        dataPoint('white','!?',currentMovesData.white.good,'Buenas',whiteTable, SVG_INDICATOR_DATA.interesting.bgColor); // Buena (!?)
+        dataPoint('white','Book',currentMovesData.white.book,'De libro',whiteTable, SVG_INDICATOR_DATA.book.bgColor); // Libro
 
-        dataPoint('black','!!',currentMovesData.black.brillant,'Brillantes',blackTable,'#1baca6', 'stat-brilliant-b');
-        dataPoint('black','!',currentMovesData.black.excellent,'Excelentes',blackTable,'#96bc4b', 'stat-excellent-b');
-        dataPoint('black','!?',currentMovesData.black.good,'Buenas',blackTable,'#b2f196', 'stat-good-b');
-        dataPoint('black','Book',currentMovesData.black.book,'De libro',blackTable,'#a88865', 'stat-book-b');
+        dataPoint('black','!!',currentMovesData.black.brillant,'Brillantes',blackTable, SVG_INDICATOR_DATA.brilliant.bgColor);
+        dataPoint('black','!',currentMovesData.black.excellent,'Excelentes',blackTable, SVG_INDICATOR_DATA.good.bgColor);
+        dataPoint('black','!?',currentMovesData.black.good,'Buenas',blackTable, SVG_INDICATOR_DATA.interesting.bgColor);
+        dataPoint('black','Book',currentMovesData.black.book,'De libro',blackTable, SVG_INDICATOR_DATA.book.bgColor);
+        // --- FIN LLAMADAS MODIFICADAS ---
 
         finishProcessing(true); // Finish successfully
     }
-
 
     function finishProcessing(success) {
         // console.log(`Processing finished ${success ? 'successfully' : 'unsuccessfully'}.`);
         if (isProcessing) { isProcessing = false; }
         // Observer remains active
+    }
+
+    // --- Board Indicator Functions ---
+
+    const BOARD_INDICATOR_CLASS = 'userscript-move-indicator';
+
+    // Función para limpiar indicadores previos del tablero
+    // --- SVG Indicator Functions (V8) ---
+    function clearBoardIndicators() {
+        const svgContainer = document.querySelector('svg.cg-custom-svgs');
+        if (svgContainer) {
+            const indicators = svgContainer.querySelectorAll(`g[${SVG_INDICATOR_ATTRIBUTE}]`);
+            // console.log(`SVG Clearing ${indicators.length} indicators...`); // Debug
+            indicators.forEach(indicator => indicator.remove());
+        }
+    }
+
+    // Función para obtener la casilla destino desde SAN (Simplificada)
+    function getDestSquareFromSan(san, color) {
+        if (!san) return null;
+
+        // Casos especiales: Enroque
+        if (san === 'O-O') return color === 'white' ? 'g1' : 'g8';
+        if (san === 'O-O-O') return color === 'white' ? 'c1' : 'c8';
+
+        // Quitar anotaciones (!!, !, !?, ?, ??), check (+), mate (#), promoción (=Q)
+        const cleanedSan = san.replace(/[!?+#=][QRNB]?/g, '');
+
+        // La casilla destino son los últimos 2 caracteres (si tiene al menos 2)
+        if (cleanedSan.length >= 2) {
+            return cleanedSan.slice(-2);
+        }
+
+        // Podría fallar para movimientos de peón muy cortos (e.g., "e4") si cleanedSan queda corto
+        // o para casos muy raros. Una versión más robusta requeriría más lógica de parseo.
+        // Si SAN es como "e4", cleanedSan es "e4", slice(-2) funciona.
+        // Si SAN es como "a", (error o muy raro), fallará aquí.
+
+        console.warn("Could not determine destination square from SAN:", san);
+        return null;
+    }
+
+    // --- SVG Indicator Functions (V8.2 - Exact Colors & Local Shadow Def) ---
+    function addBoardIndicator(square, type) { // 'square' es ej. "e5", 'type' es ej. "brilliant"
+        const svgContainer = document.querySelector('svg.cg-custom-svgs');
+        const boardWrap = document.querySelector('.cg-wrap');
+
+        if (!svgContainer || !boardWrap) {
+            console.warn("V8.2: Could not find cg-custom-svgs or cg-wrap container.");
+            return;
+        }
+
+        const data = SVG_INDICATOR_DATA[type];
+        if (!data) {
+            console.warn(`V8.2: No SVG data found for type "${type}".`);
+            return;
+        }
+
+        // --- Calcular coordenadas SVG (igual que V8.1) ---
+        const file = square.charAt(0); const rank = square.charAt(1);
+        const rankNum = parseInt(rank);
+        if (isNaN(rankNum) || rankNum < 1 || rankNum > 8 || file < 'a' || file > 'h') { /*...*/ return; }
+        const isBlackOrientation = boardWrap.classList.contains('orientation-black');
+        let fileIndex, rowIndex;
+        if (isBlackOrientation) {
+            fileIndex = 'h'.charCodeAt(0) - file.charCodeAt(0); rowIndex = rankNum - 1;
+        } else {
+            fileIndex = file.charCodeAt(0) - 'a'.charCodeAt(0); rowIndex = 8 - rankNum;
+        }
+        const tx = -3.5 + fileIndex; const ty = -3.5 + rowIndex;
+        // --- FIN CÁLCULO ---
+
+        // Crear elementos SVG
+        const gOuter = document.createElementNS(SVG_NAMESPACE, 'g');
+        gOuter.setAttribute('transform', `translate(${tx},${ty})`);
+        gOuter.setAttribute(SVG_INDICATOR_ATTRIBUTE, 'true');
+
+        const svgInner = document.createElementNS(SVG_NAMESPACE, 'svg');
+        svgInner.setAttribute('width', '1'); svgInner.setAttribute('height', '1');
+        svgInner.setAttribute('viewBox', '0 0 100 100');
+
+        // --- AÑADIR DEFINICIÓN DE FILTRO LOCALMENTE ---
+        const defs = document.createElementNS(SVG_NAMESPACE, 'defs');
+        const filter = document.createElementNS(SVG_NAMESPACE, 'filter');
+        filter.setAttribute('id', 'shadow'); // Usar el mismo ID que Lichess
+        const feDropShadow = document.createElementNS(SVG_NAMESPACE, 'feDropShadow');
+        feDropShadow.setAttribute('dx', '4'); // Valores copiados de Lichess
+        feDropShadow.setAttribute('dy', '7');
+        feDropShadow.setAttribute('stdDeviation', '5');
+        feDropShadow.setAttribute('flood-opacity', '0.5');
+
+        filter.appendChild(feDropShadow);
+        defs.appendChild(filter);
+        svgInner.appendChild(defs); // Añadir <defs> al <svg> interno
+        // --- FIN AÑADIR DEFINICIÓN ---
+
+        const gPos = document.createElementNS(SVG_NAMESPACE, 'g');
+        gPos.setAttribute('transform', 'translate(71 -12) scale(0.4)');
+
+        const circle = document.createElementNS(SVG_NAMESPACE, 'circle');
+        // Usar el color hex directo y referenciar el filtro local
+        circle.setAttribute('style', `fill:${data.bgColor};filter:url(#shadow)`);
+        circle.setAttribute('cx', '50'); circle.setAttribute('cy', '50'); circle.setAttribute('r', '50');
+
+        gPos.appendChild(circle);
+
+        if (type === 'book') {
+            // ... (código del foreignObject para el libro - SIN CAMBIOS DESDE V8.1) ...
+            const foreignObj = document.createElementNS(SVG_NAMESPACE, 'foreignObject');
+            foreignObj.setAttribute('x', '0'); foreignObj.setAttribute('y', '0');
+            foreignObj.setAttribute('width', '100'); foreignObj.setAttribute('height', '100');
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = 'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;';
+            const faIcon = document.createElement('i');
+            faIcon.className = 'fas fa-book';
+            faIcon.style.cssText = 'font-size:45px;line-height:1;'; // Ajusta este tamaño si es necesario
+            wrapper.appendChild(faIcon);
+            foreignObj.appendChild(wrapper);
+            gPos.appendChild(foreignObj);
+        } else if (data.pathD) {
+            // ... (código del path para !!, !, !? - SIN CAMBIOS DESDE V8.1) ...
+            const path = document.createElementNS(SVG_NAMESPACE, 'path');
+            path.setAttribute('fill', '#fff');
+            path.setAttribute('d', data.pathD);
+            path.setAttribute('vector-effect', 'non-scaling-stroke');
+            gPos.appendChild(path);
+        }
+
+        svgInner.appendChild(gPos);
+        gOuter.appendChild(svgInner);
+
+        svgContainer.appendChild(gOuter);
+        // console.log(`V8.2: Added SVG indicator (${type}) for ${square} at translate(${tx}, ${ty})`);
     }
 
     // --- NEW: Function to handle sequential navigation clicks in summary ---
@@ -573,6 +711,62 @@
     // --- Init & Event Handling ---
     // No automatic run on load needed; observer handles trigger
 
+    // --- Observer for Active Move on Board ---
+    let moveListObserver = null;
+
+    function setupMoveListObserver() {
+        const moveListContainer = document.querySelector('.analyse__moves .tview2-column, .gamebook .tview2-column, div.tview2.tview2-column');
+        if (!moveListContainer) { /* ... */ return; }
+
+        const observerCallback = (mutationsList, observer) => {
+            for (const mutation of mutationsList) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class' && mutation.target.tagName === 'MOVE') {
+                    const moveElement = mutation.target;
+
+                    if (moveElement.classList.contains('active')) {
+                        // console.log("Active move detected:", moveElement.dataset.san);
+
+                        // 1. Limpiar indicadores SVG inmediatamente
+                        clearBoardIndicators(); // Llama a la nueva función SVG
+
+                        let moveType = null;
+
+                        // 2. Determinar si es una jugada especial
+                        if (moveElement.classList.contains('brilliant')) { moveType = 'brilliant'; }
+                        else if (moveElement.classList.contains('good')) { moveType = 'good'; }
+                        else if (moveElement.classList.contains('interesting')) { moveType = 'interesting'; }
+                        else if (moveElement.matches('[data-is-book="true"]')) { moveType = 'book'; }
+
+                        // 3. Si ES una jugada especial, añadir el indicador SVG
+                        if (moveType) {
+                            const san = moveElement.dataset.san;
+                            const color = moveElement.dataset.moveColor; // Color aún necesario para getDestSquareFromSan (enroque)
+                            if (san && color) {
+                                const destSquareAlg = getDestSquareFromSan(san, color);
+                                if (destSquareAlg) {
+                                    // --- LLAMAR DIRECTAMENTE (SIN setTimeout) ---
+                                    addBoardIndicator(destSquareAlg, moveType); // Llama a la nueva función SVG
+                                    // --- FIN LLAMADA DIRECTA ---
+                                }
+                            } else {
+                                console.warn("Active move lacks SAN or Color data:", moveElement);
+                            }
+                        }
+                        // else { // No es especial, la limpieza ya se hizo
+                        //    console.log("Active move not special type. Board already cleared.");
+                        //}
+                        return; // Salir tras procesar la activa
+                    }
+                }
+            }
+        };
+
+        moveListObserver = new MutationObserver(observerCallback);
+        const config = { attributes: true, subtree: true, attributeFilter: ['class'] };
+        moveListObserver.observe(moveListContainer, config);
+        console.log("Move list observer V8 (SVG Indicators) is active.");
+    }
+
     // --- Observer Setup ---
     function setupObserver() {
         observerTargetNode = document.querySelector('main.analyse, main.study');
@@ -628,6 +822,7 @@
              console.log("ECO codes pre-loaded. Setting up observer.");
              setupObserver();
              setupSummaryClickNavigation();
+             setupMoveListObserver(); // Activar el observer de la lista de jugadas
              console.log("Waiting for analysis completion (loader removal or inactivity) to trigger processing...");
              // Optional: Initial check if loader is *already* missing and evals exist
              setTimeout(() => {
