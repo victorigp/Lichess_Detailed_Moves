@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name            Lichess - Detailed Moves (Games & Studies)
 // @license         GPL-3.0-only
-// @namespace       https://github.com/sealldeveloper/lichess-better-moves
-// @contributionURL https://github.com/sealldeveloper/lichess-better-moves
+// @namespace       https://github.com/victorigp/Lichess_Detailed_Moves
+// @contributionURL https://github.com/victorigp/Lichess_Detailed_Moves
 // @version         1.31
-// @description     Show brillant, excellent, great and book moves. (Detect analysis completion via loader ID disappearance)
-// @author          Seall.DEV & Thomas Sihapnya (Modified by Víctor Iglesias for study pages)
+// @description     Muestra jugadas brillantes, excelentes, buenas y de libro en los apartados de análisis y de estudio de Lichess sin necesidad de recargar la página. Al hacer clic sobre los textos de las jugadas, nos muestra su posición en el tablero con sus iconos correspondientes. Modificación del script Lichess - Detailed Moves by Seall.DEV & Thomas Sihapnya
+// @author          Víctor Iglesias
 // @require         https://greasyfork.org/scripts/47911-font-awesome-all-js/code/Font-awesome%20AllJs.js?version=275337
 // @include         /^https\:\/\/lichess\.org\/[a-zA-Z0-9]{8,}/
 // @include         /^https\:\/\/lichess\.org\/study\/.*/
@@ -15,15 +15,15 @@
 // @inject-into     content
 // ==/UserScript==
 // ==OpenUserJS==
-// @author          sealldeveloper
+// @author          victorigp
 // ==/OpenUserJS==
 
 (function() {
     'use strict';
     // --- Config ---
-    const GOOD_MOVE_THRESOLD = 0.6;
-    const EXCELLENT_MOVE_THRESOLD = 1.0;
-    const BRILLANT_MOVE_THRESOLD = 2.0;
+    const GOOD_MOVE_THRESOLD = 0.4;
+    const EXCELLENT_MOVE_THRESOLD = 0.8;
+    const BRILLANT_MOVE_THRESOLD = 1.7;
     const CHECKMATE_IN_X_MOVES_VALUE = 100;
     const PROCESSING_DEBOUNCE = 550;
     const WAIT_FOR_SUMMARY_TIMEOUT = 5000;
