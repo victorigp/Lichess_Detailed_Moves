@@ -6,5 +6,11 @@ Al hacer clic sobre los textos de las jugadas, nos muestra su posición en el ta
 
 Modificación del script [Lichess - Detailed Moves](https://github.com/sealldeveloper/lichess-detailed-moves) by Seall.DEV & Thomas Sihapnya
 
+He bajado los umbrales de detección de jugadas con respecto al original:
+
+- Buenas = 0.4;
+- Excelentes = 0.8;
+- Brillantes = 1.7;
+
 ## Instalación
 Importar el script Lichess - Detailed Moves (Games & Studies).user.js en la extensión TamperMonkey (u otro userscript manager) de tu navegador.
