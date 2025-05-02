@@ -13,4 +13,4 @@ He bajado los umbrales de detección de jugadas con respecto al original:
 - Brillantes = 1.7;
 
 ## Instalación
-Importar el script Lichess - Detailed Moves (Games & Studies).user.js en la extensión TamperMonkey (u otro userscript manager) de tu navegador.
+Importar el script Lichess - Detailed Moves 2.user.js en la extensión TamperMonkey (u otro userscript manager) de tu navegador.
